@@ -688,36 +688,49 @@ function initFlexibleFiles(
 
 
     /* =====================================================
-       QUIZ DEFAULT FILE
-    ===================================================== */
+   QUIZ DEFAULT FILE
+   ===================================================== */
 
-    if (
-        type === "quiz" &&
-        data.length === 0
-    ) {
+if (type === "quiz") {
+
+    if (data.length === 0) {
 
         data = [
-
             {
                 name: "quiz 1.png",
                 type: "image/png",
-                path: "1.png",
+                path: "quiz 1.png",
                 preview: "quiz 1.png"
             },
 
             null,
-
             null
-
         ];
-
 
         saveData(
             storageKey,
             data
         );
 
+    } else {
+
+        /* FIX OLD QUIZ 1 DATA */
+        if (
+            data[0] &&
+            data[0].name === "quiz 1.png"
+        ) {
+
+            data[0].path = "quiz 1.png";
+            data[0].preview = "quiz 1.png";
+            data[0].type = "image/png";
+
+            saveData(
+                storageKey,
+                data
+            );
+        }
     }
+}
 
 
 
