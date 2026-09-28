@@ -445,22 +445,17 @@ function openStoredFile(fileData) {
 
 function initExam() {
 
-    const container =
-        document.getElementById("examCards");
+    const container = document.getElementById("examCards");
 
     if (!container) return;
 
-
     let data = loadData(STORAGE.exam);
-
 
     while (data.length < 3) {
         data.push(null);
     }
 
-
     data = data.slice(0, 3);
-
 
     const names = [
         "Prelim",
@@ -473,18 +468,44 @@ function initExam() {
 
         container.innerHTML = "";
 
-
         data.forEach((fileData, index) => {
 
-            const card =
-                document.createElement("article");
-
+            const card = document.createElement("article");
 
             card.className = "exam-card";
 
+            const isPrelim = index === 0;
 
             const hasFile =
-                Boolean(fileData?.data);
+                isPrelim
+                    ? true
+                    : Boolean(fileData?.data);
+
+            const fileName =
+                isPrelim
+                    ? "Prelim.pdf"
+                    : hasFile
+                        ? fileData.name
+                        : "No PDF attached.";
+
+
+            /* =================================================
+               PRELIM IMAGE
+               Small preview only
+            ================================================= */
+
+            const prelimPreview = isPrelim
+                ? `
+                    <div class="exam-image-preview">
+                        <img
+                            src="Prelim.png"
+                            alt="Prelim Exam Preview"
+                            class="academic-view-image"
+                            data-image="Prelim.png"
+                        >
+                    </div>
+                `
+                : "";
 
 
             card.innerHTML = `
@@ -496,32 +517,27 @@ function initExam() {
                     </span>
 
                     <div class="exam-icon">
-
                         <i class="fa-regular fa-file-pdf"></i>
-
                     </div>
 
                 </div>
 
 
-                <div>
+                ${prelimPreview}
+
+
+                <div class="exam-info">
 
                     <h3>
                         ${names[index]}
                     </h3>
 
-                    <p>
-                        One PDF attachment
-                        for this examination period.
-                    </p>
 
                     <div class="file-name">
 
-                        ${
-                            hasFile
-                            ? escapeHTML(fileData.name)
-                            : "No PDF attached."
-                        }
+                        <i class="fa-regular fa-file-pdf"></i>
+
+                        ${escapeHTML(fileName)}
 
                     </div>
 
@@ -549,9 +565,11 @@ function initExam() {
                         <i class="fa-solid fa-plus"></i>
 
                         ${
-                            hasFile
-                            ? "REPLACE PDF"
-                            : "ATTACH PDF"
+                            isPrelim
+                                ? "REPLACE PDF"
+                                : hasFile
+                                    ? "REPLACE PDF"
+                                    : "ATTACH PDF"
                         }
 
                     </button>
@@ -561,20 +579,36 @@ function initExam() {
             `;
 
 
-            /* VIEW */
+            /* =================================================
+               VIEW PDF
+            ================================================= */
 
             card
                 .querySelector(".view-btn")
                 ?.addEventListener("click", () => {
 
+                    if (isPrelim) {
+
+                        window.open(
+                            "Prelim.pdf",
+                            "_blank"
+                        );
+
+                        return;
+                    }
+
                     if (hasFile) {
+
                         openStoredFile(fileData);
+
                     }
 
                 });
 
 
-            /* ADD / REPLACE */
+            /* =================================================
+               REPLACE / ATTACH PDF
+            ================================================= */
 
             card
                 .querySelector(".replace-btn")
@@ -649,10 +683,131 @@ function initExam() {
 
         });
 
+
+        initAcademicImageViewer();
+
     }
 
 
     render();
+
+}
+
+
+
+/* =========================================================
+   PERIODS
+========================================================= */
+
+const PERIODS = [
+    "Prelim",
+    "Midterm",
+    "Final"
+];
+
+
+
+/* =========================================================
+   DEFAULT QUIZ FILES
+========================================================= */
+
+const DEFAULT_QUIZ = [
+
+    {
+        name: "quiz 1.png",
+        type: "image/png",
+        path: "quiz 1.png",
+        preview: "quiz 1.png",
+        period: "Prelim"
+    },
+
+    {
+        name: "quiz 2.png",
+        type: "image/png",
+        path: "quiz 2.png",
+        preview: "quiz 2.png",
+        period: "Prelim"
+    },
+
+    {
+        name: "quiz 3.png",
+        type: "image/png",
+        path: "quiz 3.png",
+        preview: "quiz 3.png",
+        period: "Prelim"
+    },
+
+    {
+        name: "long quiz.png",
+        type: "image/png",
+        path: "long quiz.png",
+        preview: "long quiz.png",
+        period: "Prelim"
+    }
+
+];
+
+
+
+/* =========================================================
+   DEFAULT LAB FILES
+========================================================= */
+
+const DEFAULT_LAB = [
+
+    {
+        name: "lab 1.pdf",
+        type: "application/pdf",
+        path: "lab 1.pdf",
+        preview: "pic1lab.png",
+        period: "Prelim"
+    },
+
+    {
+        name: "lab 2.pdf",
+        type: "application/pdf",
+        path: "lab 2.pdf",
+        preview: "pic2lab.png",
+        period: "Prelim"
+    },
+
+    {
+        name: "PEREA - NETLAB.pdf",
+        type: "application/pdf",
+        path: "PEREA - NETLAB.pdf",
+        preview: "Netlab 1.png",
+        period: "Midterm"
+    }
+
+];
+
+
+
+/* =========================================================
+   GET PERIOD CONTAINER
+========================================================= */
+
+function getPeriodContainer(type, period) {
+
+    const ids = {
+
+        quiz: {
+            Prelim: "quizPrelimCards",
+            Midterm: "quizMidtermCards",
+            Final: "quizFinalCards"
+        },
+
+        lab: {
+            Prelim: "labPrelimCards",
+            Midterm: "labMidtermCards",
+            Final: "labFinalCards"
+        }
+
+    };
+
+    return document.getElementById(
+        ids[type][period]
+    );
 
 }
 
@@ -665,13 +820,9 @@ function initExam() {
 function initFlexibleFiles(
     type,
     storageKey,
-    containerId,
     addButtonId,
     countId
 ) {
-
-    const container =
-        document.getElementById(containerId);
 
     const addButton =
         document.getElementById(addButtonId);
@@ -679,133 +830,183 @@ function initFlexibleFiles(
     const countText =
         document.getElementById(countId);
 
+    const containers = {
 
-    if (!container) return;
+        Prelim:
+            getPeriodContainer(type, "Prelim"),
 
+        Midterm:
+            getPeriodContainer(type, "Midterm"),
+
+        Final:
+            getPeriodContainer(type, "Final")
+
+    };
+
+
+    /* CURRENT FILE PER PERIOD */
+
+    const currentSlide = {
+        Prelim: 0,
+        Midterm: 0,
+        Final: 0
+    };
+
+
+    /* LOAD SAVED DATA */
 
     let data = loadData(storageKey);
 
-
-
-    /* =====================================================
-   QUIZ DEFAULT FILE
-   ===================================================== */
-
-if (type === "quiz") {
-
-    if (data.length === 0) {
-
-        data = [
-            {
-                name: "quiz 1.png",
-                type: "image/png",
-                path: "quiz 1.png",
-                preview: "quiz 1.png"
-            },
-
-            null,
-            null
-        ];
-
-        saveData(
-            storageKey,
-            data
-        );
-
-    } else {
-
-        /* FIX OLD QUIZ 1 DATA */
-        if (
-            data[0] &&
-            data[0].name === "quiz 1.png"
-        ) {
-
-            data[0].path = "quiz 1.png";
-            data[0].preview = "quiz 1.png";
-            data[0].type = "image/png";
-
-            saveData(
-                storageKey,
-                data
-            );
-        }
-    }
-}
-
-
-
-    /* =====================================================
-       LAB DEFAULT FILES
-    ===================================================== */
-
     if (
-        type === "lab" &&
+        !Array.isArray(data) ||
         data.length === 0
     ) {
 
-        data = [
-
-            {
-                name: "lab 1.pdf",
-                type: "application/pdf",
-                path: "lab 1.pdf",
-                preview: "pic1lab.png"
-            },
-
-            {
-                name: "lab 2.pdf",
-                type: "application/pdf",
-                path: "lab 2.pdf",
-                preview: "pic2lab.png"
-            },
-            
-        
-            null
-
-        ];
-
-
-        saveData(
-            storageKey,
-            data
-        );
+        data =
+            type === "quiz"
+                ? structuredClone(DEFAULT_QUIZ)
+                : structuredClone(DEFAULT_LAB);
 
     }
 
 
+    /* MAKE SURE DEFAULT QUIZ FILES EXIST */
 
-    /* =====================================================
-       ENSURE 3 INITIAL SLOTS
-    ===================================================== */
+    if (type === "quiz") {
 
-    while (
-        data.length < INITIAL_SLOTS
-    ) {
+        DEFAULT_QUIZ.forEach(requiredFile => {
 
-        data.push(null);
+            const exists = data.some(
+                item =>
+                    item &&
+                    item.name === requiredFile.name
+            );
+
+            if (!exists) {
+                data.push(
+                    structuredClone(requiredFile)
+                );
+            }
+
+        });
+
+        data = data.map(fileData => {
+
+            if (!fileData) return fileData;
+
+            const required =
+                DEFAULT_QUIZ.find(
+                    item =>
+                        item.name === fileData.name
+                );
+
+            if (required) {
+
+                fileData.period = "Prelim";
+
+                if (!fileData.preview) {
+                    fileData.preview =
+                        required.preview;
+                }
+
+            }
+
+            return fileData;
+
+        });
 
     }
 
 
+    /* MAKE SURE DEFAULT LAB FILES EXIST */
 
-    /* =====================================================
-       UPDATE COUNT
-    ===================================================== */
+    if (type === "lab") {
+
+        DEFAULT_LAB.forEach(requiredFile => {
+
+            const exists = data.some(
+                item =>
+                    item &&
+                    item.name === requiredFile.name
+            );
+
+            if (!exists) {
+                data.push(
+                    structuredClone(requiredFile)
+                );
+            }
+
+        });
+
+        data = data.map(fileData => {
+
+            if (!fileData) return fileData;
+
+            const required =
+                DEFAULT_LAB.find(
+                    item =>
+                        item.name === fileData.name
+                );
+
+            if (required) {
+
+                fileData.period =
+                    required.period;
+
+                if (!fileData.preview) {
+                    fileData.preview =
+                        required.preview;
+                }
+
+            }
+
+            return fileData;
+
+        });
+
+    }
+
+
+    /* FIX OLD DATA */
+
+    data = data.map(
+        (fileData, index) => {
+
+            if (!fileData) return null;
+
+            if (!fileData.period) {
+
+                fileData.period =
+                    PERIODS[index] ||
+                    "Prelim";
+
+            }
+
+            return fileData;
+
+        }
+    );
+
+
+    saveData(
+        storageKey,
+        data
+    );
+
+
+    /* COUNT */
 
     function updateCount() {
 
         if (!countText) return;
 
-
         const attached =
             data.filter(Boolean).length;
 
-
         countText.textContent =
-            `${data.length} slots • ${attached} attached`;
+            `${attached} attached`;
 
     }
-
 
 
     /* =====================================================
@@ -814,131 +1015,358 @@ if (type === "quiz") {
 
     function render() {
 
-        container.innerHTML = "";
+        PERIODS.forEach(period => {
+
+            const container =
+                containers[period];
+
+            if (!container) return;
+
+            container.innerHTML = "";
 
 
-        data.forEach((fileData, index) => {
+            const periodFiles =
+                data.filter(
+                    fileData =>
+                        fileData &&
+                        fileData.period === period
+                );
 
-            const card =
+
+            /* NO FILE */
+
+            if (periodFiles.length === 0) {
+
+                container.appendChild(
+                    renderFileCard({
+
+                        type,
+
+                        fileData: null,
+
+                        period,
+
+                        onReplace: () => {
+                            addFileToPeriod(period);
+                        }
+
+                    })
+                );
+
+                return;
+
+            }
+
+
+            /* KEEP SLIDE VALID */
+
+            if (
+                currentSlide[period] >=
+                periodFiles.length
+            ) {
+
+                currentSlide[period] =
+                    periodFiles.length - 1;
+
+            }
+
+            if (
+                currentSlide[period] < 0
+            ) {
+
+                currentSlide[period] = 0;
+
+            }
+
+
+            const index =
+                currentSlide[period];
+
+            const fileData =
+                periodFiles[index];
+
+
+            /* FILE WRAPPER */
+
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "single-file-slider";
+
+
+            /* FILE CARD */
+
+            wrapper.appendChild(
                 renderFileCard({
 
                     type,
-                    index,
+
                     fileData,
 
+                    period,
+
                     onReplace: () => {
+                        replaceFile(fileData);
+                    }
 
-                        createHiddenInput(
-                            "image/*,.pdf,application/pdf",
-                            async file => {
-
-                                const isPDF =
-                                    file.type ===
-                                    "application/pdf" ||
-                                    file.name
-                                        .toLowerCase()
-                                        .endsWith(".pdf");
+                })
+            );
 
 
-                                const isImage =
-                                    file.type.startsWith(
-                                        "image/"
-                                    );
+            /* =================================================
+               SIMPLE ARROW NAVIGATION
+               <  1 / 4  >
+            ================================================= */
+
+            if (periodFiles.length > 1) {
+
+                const navigation =
+                    document.createElement("div");
+
+                navigation.className =
+                    "file-navigation";
+
+                navigation.innerHTML = `
+
+                    <button
+                        type="button"
+                        class="file-nav-btn prev-btn"
+                        ${index === 0 ? "disabled" : ""}
+                        aria-label="Previous"
+                    >
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+
+                    <span class="file-counter">
+                        ${index + 1} / ${periodFiles.length}
+                    </span>
+
+                    <button
+                        type="button"
+                        class="file-nav-btn next-btn"
+                        ${
+                            index ===
+                            periodFiles.length - 1
+                                ? "disabled"
+                                : ""
+                        }
+                        aria-label="Next"
+                    >
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                `;
 
 
-                                if (
-                                    !isPDF &&
-                                    !isImage
-                                ) {
+                /* PREVIOUS */
 
-                                    alert(
-                                        "Please choose an image or PDF file."
-                                    );
+                navigation
+                    .querySelector(".prev-btn")
+                    ?.addEventListener(
+                        "click",
+                        () => {
 
-                                    return;
+                            if (
+                                currentSlide[period] > 0
+                            ) {
 
-                                }
-
-
-                                if (
-                                    file.size >
-                                    7 * 1024 * 1024
-                                ) {
-
-                                    alert(
-                                        "This file is over 7 MB. Please use a smaller file."
-                                    );
-
-                                    return;
-
-                                }
-
-
-                                const dataURL =
-                                    await fileToDataURL(file);
-
-
-                                data[index] = {
-
-                                    name: file.name,
-
-                                    type: file.type,
-
-                                    data: dataURL,
-
-                                    /*
-                                      Kapag image,
-                                      gamitin mismo ang image
-                                      bilang preview.
-                                    */
-
-                                    preview:
-                                        isImage
-                                        ? dataURL
-                                        : null
-
-                                };
-
-
-                                saveData(
-                                    storageKey,
-                                    data
-                                );
-
+                                currentSlide[period]--;
 
                                 render();
 
                             }
-                        );
 
-                    },
-
-
-                    onView: openStoredFile
-
-                });
+                        }
+                    );
 
 
-            container.appendChild(card);
+                /* NEXT */
+
+                navigation
+                    .querySelector(".next-btn")
+                    ?.addEventListener(
+                        "click",
+                        () => {
+
+                            if (
+                                currentSlide[period] <
+                                periodFiles.length - 1
+                            ) {
+
+                                currentSlide[period]++;
+
+                                render();
+
+                            }
+
+                        }
+                    );
+
+
+                wrapper.appendChild(
+                    navigation
+                );
+
+            }
+
+
+            container.appendChild(
+                wrapper
+            );
 
         });
 
 
         updateCount();
 
+        initAcademicImageViewer();
+
     }
 
 
-
     /* =====================================================
-       ADD NEW SLOT
+       ADD FILE
     ===================================================== */
 
-    addButton?.addEventListener(
-        "click",
-        () => {
+    function addFileToPeriod(period) {
 
-            data.push(null);
+        createHiddenInput(
+            "image/*,.pdf,application/pdf",
+            async file => {
+
+                await processFile(
+                    file,
+                    period,
+                    null
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       REPLACE FILE
+    ===================================================== */
+
+    function replaceFile(fileData) {
+
+        const period =
+            fileData.period || "Prelim";
+
+        createHiddenInput(
+            "image/*,.pdf,application/pdf",
+            async file => {
+
+                await processFile(
+                    file,
+                    period,
+                    fileData
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       PROCESS FILE
+    ===================================================== */
+
+    async function processFile(
+        file,
+        period,
+        oldFile
+    ) {
+
+        const isPDF =
+            file.type === "application/pdf" ||
+            file.name
+                .toLowerCase()
+                .endsWith(".pdf");
+
+        const isImage =
+            file.type.startsWith("image/");
+
+
+        if (!isPDF && !isImage) {
+
+            alert(
+                "Please choose an image or PDF file."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            file.size >
+            7 * 1024 * 1024
+        ) {
+
+            alert(
+                "This file is over 7 MB. Please use a smaller file."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const dataURL =
+                await fileToDataURL(file);
+
+
+            const newFile = {
+
+                name: file.name,
+
+                type: file.type,
+
+                data: dataURL,
+
+                /* Keep old lab preview when replacing PDF */
+
+                preview:
+                    isImage
+                        ? dataURL
+                        : oldFile?.preview || null,
+
+                period
+
+            };
+
+
+            /* REPLACE */
+
+            if (oldFile) {
+
+                const index =
+                    data.indexOf(oldFile);
+
+                if (index !== -1) {
+                    data[index] =
+                        newFile;
+                }
+
+            }
+
+
+            /* ADD */
+
+            else {
+
+                data.push(
+                    newFile
+                );
+
+            }
 
 
             saveData(
@@ -947,7 +1375,87 @@ if (type === "quiz") {
             );
 
 
+            /* SHOW NEW FILE */
+
+            const periodFiles =
+                data.filter(
+                    item =>
+                        item &&
+                        item.period === period
+                );
+
+            const newIndex =
+                periodFiles.findIndex(
+                    item =>
+                        item.name === newFile.name &&
+                        item.data === newFile.data
+                );
+
+            currentSlide[period] =
+                newIndex >= 0
+                    ? newIndex
+                    : 0;
+
+
             render();
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Unable to read this file."
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       ADD BUTTON
+    ===================================================== */
+
+    addButton?.addEventListener(
+        "click",
+        () => {
+
+            const choice =
+                prompt(
+                    "Where do you want to add this file?\n\n" +
+                    "1 = Prelim\n" +
+                    "2 = Midterm\n" +
+                    "3 = Final"
+                );
+
+
+            const periodMap = {
+
+                "1": "Prelim",
+                "2": "Midterm",
+                "3": "Final"
+
+            };
+
+
+            const period =
+                periodMap[choice];
+
+
+            if (!period) {
+
+                alert(
+                    "Please choose 1, 2, or 3."
+                );
+
+                return;
+
+            }
+
+
+            addFileToPeriod(period);
 
         }
     );
@@ -964,18 +1472,14 @@ if (type === "quiz") {
 ========================================================= */
 
 function renderFileCard({
-
     type,
-    index,
     fileData,
-    onReplace,
-    onView
-
+    period,
+    onReplace
 }) {
 
     const card =
         document.createElement("article");
-
 
     card.className =
         "file-card";
@@ -988,23 +1492,16 @@ function renderFileCard({
         );
 
 
-
-    /* =====================================================
-       TITLE
-    ===================================================== */
-
     const title =
-        type === "quiz"
-        ? `Quiz ${index + 1}`
-        : type === "lab"
-        ? `Lab ${index + 1}`
-        : "File";
+        fileData?.name ||
+        (
+            type === "quiz"
+                ? `Quiz ${period}`
+                : `Lab ${period}`
+        );
 
 
-
-    /* =====================================================
-       PREVIEW
-    ===================================================== */
+    /* IMAGE PREVIEW */
 
     let preview = "";
 
@@ -1016,14 +1513,22 @@ function renderFileCard({
             <div
                 class="${
                     type === "lab"
-                    ? "lab-preview"
-                    : "quiz-preview"
+                        ? "lab-preview"
+                        : "quiz-preview"
                 }"
             >
 
                 <img
-                    src="${escapeHTML(fileData.preview)}"
-                    alt="${escapeHTML(title)} preview"
+                    src="${escapeHTML(
+                        fileData.preview
+                    )}"
+                    alt="${escapeHTML(
+                        title
+                    )} preview"
+                    class="academic-view-image"
+                    data-image="${escapeHTML(
+                        fileData.preview
+                    )}"
                 >
 
                 <div class="preview-overlay">
@@ -1031,13 +1536,13 @@ function renderFileCard({
                     <i
                         class="${
                             type === "lab"
-                            ? "fa-regular fa-file-pdf"
-                            : "fa-regular fa-image"
+                                ? "fa-regular fa-file-pdf"
+                                : "fa-regular fa-image"
                         }"
                     ></i>
 
                     <span>
-                        ${escapeHTML(title)}
+                        ${escapeHTML(period)}
                     </span>
 
                 </div>
@@ -1049,35 +1554,28 @@ function renderFileCard({
     }
 
 
-
-    /* =====================================================
-       CARD HTML
-    ===================================================== */
+    /* CARD */
 
     card.innerHTML = `
 
         ${preview}
 
-
         <div class="file-card-head">
 
             <span class="file-index">
-
                 ${type.toUpperCase()}
-
-                ${String(index + 1).padStart(2, "0")}
-
+                ${escapeHTML(
+                    period.toUpperCase()
+                )}
             </span>
-
 
             <span class="doc-icon">
 
                 <i
                     class="${
-                        fileData?.type === "image/png" ||
                         fileData?.type?.startsWith("image/")
-                        ? "fa-regular fa-image"
-                        : "fa-regular fa-file-pdf"
+                            ? "fa-regular fa-image"
+                            : "fa-regular fa-file-pdf"
                     }"
                 ></i>
 
@@ -1087,7 +1585,11 @@ function renderFileCard({
 
 
         <h3>
-            ${escapeHTML(title)}
+            ${
+                hasFile
+                    ? escapeHTML(fileData.name)
+                    : `No ${type} file yet`
+            }
         </h3>
 
 
@@ -1095,11 +1597,8 @@ function renderFileCard({
 
             ${
                 hasFile
-                ? escapeHTML(
-                    fileData.name ||
-                    `${title}.pdf`
-                )
-                : "No file attached yet."
+                    ? escapeHTML(fileData.name)
+                    : `Add your ${period} ${type} file.`
             }
 
         </p>
@@ -1113,7 +1612,6 @@ function renderFileCard({
             >
 
                 <i class="fa-regular fa-eye"></i>
-
                 VIEW
 
             </button>
@@ -1127,8 +1625,8 @@ function renderFileCard({
 
                 ${
                     hasFile
-                    ? "REPLACE"
-                    : "ADD"
+                        ? "REPLACE"
+                        : "ADD"
                 }
 
             </button>
@@ -1138,10 +1636,7 @@ function renderFileCard({
     `;
 
 
-
-    /* =====================================================
-       VIEW
-    ===================================================== */
+    /* VIEW */
 
     card
         .querySelector(".view-btn")
@@ -1149,18 +1644,17 @@ function renderFileCard({
             "click",
             () => {
 
-                if (hasFile) {
-                    onView(fileData);
-                }
+                if (!hasFile) return;
+
+                openFileForAcademic(
+                    fileData
+                );
 
             }
         );
 
 
-
-    /* =====================================================
-       ADD / REPLACE
-    ===================================================== */
+    /* REPLACE / ADD */
 
     card
         .querySelector(".replace-btn")
@@ -1177,78 +1671,335 @@ function renderFileCard({
 
 
 /* =========================================================
-   START EVERYTHING
+   OPEN QUIZ / LAB FILE
+========================================================= */
+
+function openFileForAcademic(fileData) {
+
+    if (!fileData) return;
+
+
+    const isPDF =
+        fileData.type === "application/pdf" ||
+        /\.pdf$/i.test(
+            fileData.name || ""
+        );
+
+
+    /* PDF */
+
+    if (isPDF) {
+
+        if (fileData.data) {
+
+            openStoredFile(
+                fileData
+            );
+
+            return;
+
+        }
+
+        if (fileData.path) {
+
+            window.open(
+                fileData.path,
+                "_blank"
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    /* IMAGE */
+
+    if (fileData.preview) {
+
+        openAcademicImage(
+            fileData.preview,
+            fileData.name
+        );
+
+        return;
+
+    }
+
+
+    if (fileData.data) {
+
+        openStoredFile(
+            fileData
+        );
+
+        return;
+
+    }
+
+
+    if (fileData.path) {
+
+        window.open(
+            fileData.path,
+            "_blank"
+        );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   IMAGE VIEWER
+========================================================= */
+
+function openAcademicImage(
+    imageSrc,
+    title = "Preview"
+) {
+
+    initAcademicImageViewer();
+
+
+    const viewer =
+        document.getElementById(
+            "academicImageViewer"
+        );
+
+    const viewerImage =
+        document.getElementById(
+            "academicViewerImage"
+        );
+
+
+    if (
+        !viewer ||
+        !viewerImage
+    ) {
+        return;
+    }
+
+
+    viewerImage.src =
+        imageSrc;
+
+    viewerImage.alt =
+        title;
+
+
+    viewer.style.display =
+        "flex";
+
+    viewer.classList.add(
+        "active"
+    );
+
+}
+
+
+
+/* =========================================================
+   CREATE IMAGE VIEWER
+========================================================= */
+
+function initAcademicImageViewer() {
+
+    let viewer =
+        document.getElementById(
+            "academicImageViewer"
+        );
+
+
+    /* CREATE ONCE */
+
+    if (!viewer) {
+
+        viewer =
+            document.createElement("div");
+
+        viewer.id =
+            "academicImageViewer";
+
+        viewer.className =
+            "academic-image-viewer";
+
+
+        viewer.innerHTML = `
+
+            <button
+                type="button"
+                class="academic-image-viewer-close"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+
+            <img
+                id="academicViewerImage"
+                src=""
+                alt=""
+            >
+
+        `;
+
+
+        document.body.appendChild(
+            viewer
+        );
+
+
+        viewer.style.display =
+            "none";
+
+
+        /* CLOSE X */
+
+        viewer
+            .querySelector(
+                ".academic-image-viewer-close"
+            )
+            .addEventListener(
+                "click",
+                closeAcademicImageViewer
+            );
+
+
+        /* CLICK OUTSIDE */
+
+        viewer.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target === viewer
+                ) {
+
+                    closeAcademicImageViewer();
+
+                }
+
+            }
+        );
+
+
+        /* ESC */
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape"
+                ) {
+
+                    closeAcademicImageViewer();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* CONNECT IMAGE PREVIEWS */
+
+    document
+        .querySelectorAll(
+            ".academic-view-image"
+        )
+        .forEach(image => {
+
+            if (
+                image.dataset.viewerReady
+            ) {
+                return;
+            }
+
+
+            image.dataset.viewerReady =
+                "true";
+
+
+            image.addEventListener(
+                "click",
+                () => {
+
+                    openAcademicImage(
+                        image.dataset.image ||
+                        image.src,
+
+                        image.alt ||
+                        "Preview"
+                    );
+
+                }
+            );
+
+        });
+
+}
+
+
+
+/* =========================================================
+   CLOSE IMAGE VIEWER
+========================================================= */
+
+function closeAcademicImageViewer() {
+
+    const viewer =
+        document.getElementById(
+            "academicImageViewer"
+        );
+
+    const image =
+        document.getElementById(
+            "academicViewerImage"
+        );
+
+
+    if (!viewer) return;
+
+
+    viewer.classList.remove(
+        "active"
+    );
+
+    viewer.style.display =
+        "none";
+
+
+    if (image) {
+        image.src = "";
+    }
+
+}
+
+
+
+/* =========================================================
+   START
 ========================================================= */
 
 initExam();
 
-
 initFlexibleFiles(
     "quiz",
     STORAGE.quiz,
-    "quizCards",
     "addQuiz",
     "quizCount"
 );
 
-
 initFlexibleFiles(
     "lab",
     STORAGE.lab,
-    "labCards",
     "addLab",
     "labCount"
 );
-
-
-
-function openStoredFile(file) {
-    if (!file) return;
-
-    // IMAGE VIEWER
-    if (file.type && file.type.startsWith("image/")) {
-        const viewer = document.createElement("div");
-        viewer.className = "image-viewer";
-
-        viewer.innerHTML = `
-            <div class="image-viewer-content">
-                <button class="image-viewer-close" aria-label="Close">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-                <img src="${file.data || file.path}" alt="${escapeHTML(file.name || "Quiz Image")}">
-            </div>
-        `;
-
-        document.body.appendChild(viewer);
-
-        const closeViewer = () => {
-            viewer.remove();
-        };
-
-        viewer.querySelector(".image-viewer-close")
-            .addEventListener("click", closeViewer);
-
-        viewer.addEventListener("click", (e) => {
-            if (e.target === viewer) {
-                closeViewer();
-            }
-        });
-
-        document.addEventListener("keydown", function escHandler(e) {
-            if (e.key === "Escape") {
-                closeViewer();
-                document.removeEventListener("keydown", escHandler);
-            }
-        });
-
-        return;
-    }
-
-    // PDF
-    if (file.type === "application/pdf") {
-        const source = file.data || file.path;
-        window.open(source, "_blank");
-        return;
-    }
-}
