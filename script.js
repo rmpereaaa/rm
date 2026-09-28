@@ -775,7 +775,7 @@ const DEFAULT_LAB = [
         name: "PEREA - NETLAB.pdf",
         type: "application/pdf",
         path: "PEREA - NETLAB.pdf",
-        preview: "Netlab 1.png",
+        preview: "NetLab 1.png",
         period: "Midterm"
     }
 
